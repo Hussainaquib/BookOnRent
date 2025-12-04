@@ -1,0 +1,856 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Monthly Consistency Dashboard</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#0f1724; --card:#0b1220; --muted:#9aa7bd; --accent:#7c3aed;
+    --glass: rgba(255,255,255,0.03);
+  }
+  *{box-sizing:border-box;font-family:Inter,system-ui,Segoe UI,Roboto,"Helvetica Neue",Arial}
+  body{margin:0;background:linear-gradient(180deg,#071126 0%, #071b2b 100%);color:#e6eef6;padding:18px;}
+  header{display:flex;align-items:center;gap:18px;margin-bottom:14px}
+  h1{margin:0;font-size:20px}
+  .top-controls{margin-left:auto;display:flex;gap:8px;align-items:center}
+  .card{background:var(--card);border-radius:12px;padding:12px;box-shadow:0 6px 18px rgba(2,6,23,0.7);border:1px solid rgba(255,255,255,0.03)}
+  .grid{display:grid;grid-template-columns:360px 1fr;gap:12px}
+  .left{display:flex;flex-direction:column;gap:12px}
+  .small{font-size:13px;color:var(--muted)}
+  label{display:block;font-size:13px;color:var(--muted);margin-bottom:6px}
+  input[type="month"], select, input[type="text"], input[type="number"]{background:transparent;border:1px solid rgba(255,255,255,0.06);padding:8px;border-radius:8px;color:inherit}
+  button{background:var(--accent);border:none;color:white;padding:8px 10px;border-radius:8px;cursor:pointer}
+  .activities-list{display:flex;flex-direction:column;gap:8px;max-height:220px;overflow:auto;padding-right:6px}
+  .activity-row{display:flex;align-items:center;gap:8px}
+  .color-box{width:18px;height:18px;border-radius:4px;border:1px solid rgba(255,255,255,0.06)}
+  .day-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:8px}
+  .day-cell{min-height:110px;padding:8px;border-radius:8px;background:linear-gradient(180deg, rgba(255,255,255,0.02), transparent);cursor:pointer;border:1px dashed rgba(255,255,255,0.02)}
+  .day-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:6px}
+  .day-number{font-weight:600}
+  .dots{display:flex;gap:4px;flex-wrap:wrap}
+  .dot{width:10px;height:10px;border-radius:50%}
+  .modal{position:fixed;inset:0;background:rgba(2,6,23,0.6);display:flex;align-items:center;justify-content:center;padding:18px;z-index:40}
+  .modal-inner{width:920px;max-width:98%;max-height:90vh;overflow:auto}
+  .row{display:flex;gap:10px}
+  .col{flex:1}
+  .inputs{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+  .toggle{display:inline-flex;align-items:center;gap:8px}
+  .chip{background:var(--glass);padding:6px 8px;border-radius:999px;font-size:13px;color:var(--muted)}
+  footer{margin-top:14px;color:var(--muted);font-size:13px}
+  .charts{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+  @media (max-width:980px){.grid{grid-template-columns:1fr;}.charts{grid-template-columns:1fr}}
+  .control-row{display:flex;gap:8px;flex-wrap:wrap}
+  .small-btn{padding:6px 8px;background:transparent;border:1px solid rgba(255,255,255,0.06);border-radius:8px;color:var(--muted);cursor:pointer}
+  .activity-toggle{display:flex;flex-direction:column;gap:6px;margin-top:8px}
+  .weekend-tasks{display:flex;flex-direction:column;gap:8px}
+  .task-row{display:flex;align-items:center;gap:8px}
+  .heat{display:grid;grid-template-columns:repeat(7,1fr);gap:6px}
+  .heat .cell{height:28px;border-radius:6px}
+  .legend{display:flex;gap:6px;align-items:center;margin-top:8px}
+  .pill{padding:4px 8px;border-radius:999px;background:rgba(255,255,255,0.03);font-size:12px}
+  .importfile{display:none}
+  a.link{color:var(--accent);text-decoration:none}
+  .flex{display:flex;gap:8px;align-items:center}
+  .muted{color:var(--muted)}
+</style>
+</head>
+<body>
+<header>
+  <div>
+    <h1>Monthly Consistency Dashboard</h1>
+    <div class="small muted">Track daily habits, mood, sleep, phone usage, namaz & water — fully editable & persistent</div>
+  </div>
+
+  <div class="top-controls">
+    <label class="small muted">Month
+      <input id="monthPicker" type="month" />
+    </label>
+    <button id="openManage" title="Manage activities & tasks">Manage Activities</button>
+    <button id="exportBtn" class="small-btn">Export JSON</button>
+    <label class="small-btn" style="display:inline-flex;align-items:center;gap:8px;cursor:pointer">
+      Import <input id="importInput" class="importfile" type="file" accept="application/json" />
+    </label>
+    <button id="resetBtn" class="small-btn">Reset Month</button>
+  </div>
+</header>
+
+<div class="grid">
+  <div class="left">
+    <div class="card">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+        <div><strong>Activities</strong><div class="small muted">Pick colors and add new activities</div></div>
+        <button id="addActivityBtn" class="small-btn">+ Add</button>
+      </div>
+      <div id="activitiesContainer" class="activities-list"></div>
+    </div>
+
+    <div class="card">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+        <div><strong>Weekend (Sat/Sun) Tasks</strong><div class="small muted">Appears on weekend days</div></div>
+        <button id="addWeekendTaskBtn" class="small-btn">+ Task</button>
+      </div>
+      <div id="weekendTasks" class="weekend-tasks"></div>
+    </div>
+
+    <div class="card">
+      <strong>Quick Controls</strong>
+      <div style="margin-top:8px" class="control-row">
+        <button id="bulkFillBtn" class="small-btn" title="Mark today's selected activities quickly">Bulk Fill Today</button>
+        <button id="clearAllBtn" class="small-btn" title="Clear all saved data for this month">Clear Month</button>
+        <button id="todayBtn" class="small-btn">Go to Today</button>
+      </div>
+      <div style="margin-top:10px" class="small muted">Tip: Click any calendar day to edit its data. Use Export/Import to backup.</div>
+    </div>
+  </div>
+
+  <div>
+    <div class="card" style="margin-bottom:12px">
+      <div style="display:flex;justify-content:space-between;align-items:center">
+        <div><strong id="titleMonth">Month</strong><div class="small muted" id="subtitle"></div></div>
+        <div class="chip" id="statsSummary">No data yet</div>
+      </div>
+      <div style="margin-top:12px" id="calendarWrap">
+        <div class="day-grid" id="dayGrid"></div>
+      </div>
+    </div>
+
+    <div class="card charts" style="margin-bottom:12px">
+      <div>
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px"><strong>Daily Activities (stacked)</strong><div class="small muted">Toggles per day</div></div>
+        <canvas id="activitiesChart" height="240"></canvas>
+      </div>
+
+      <div>
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px"><strong>Mood (+/-5)</strong><div class="small muted">Daily mood trend</div></div>
+        <canvas id="moodChart" height="240"></canvas>
+      </div>
+    </div>
+
+    <div class="card charts">
+      <div>
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px"><strong>Sleep & Phone</strong><div class="small muted">Night/day sleep & phone time</div></div>
+        <canvas id="sleepChart" height="240"></canvas>
+      </div>
+
+      <div>
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px"><strong>Top 3 Apps (monthly total)</strong><div class="small muted">Polar view</div></div>
+        <canvas id="appsChart" height="240"></canvas>
+      </div>
+    </div>
+
+    <div class="card" style="margin-top:12px">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+        <div><strong>Weekend Tasks Completion</strong><div class="small muted">Shows weekends and completed tasks</div></div>
+        <div class="small muted" id="weekendSummary"></div>
+      </div>
+      <div id="weekendGrid" class="heat" style="margin-top:6px"></div>
+    </div>
+
+  </div>
+</div>
+
+<!-- Modal for editing a day -->
+<div id="dayModal" class="modal" style="display:none">
+  <div class="modal-inner card">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+      <div><strong id="modalTitle">Edit Day</strong><div class="small muted" id="modalSub"></div></div>
+      <div><button id="saveDay" class="small-btn">Save</button> <button id="closeModal" class="small-btn">Close</button></div>
+    </div>
+
+    <div class="row">
+      <div class="col">
+        <label class="small">Activities (click to toggle)</label>
+        <div id="modalActivities" class="activity-toggle"></div>
+
+        <div style="margin-top:10px" class="small muted">Add note</div>
+        <input id="dayNote" type="text" placeholder="Short note (optional)" />
+      </div>
+
+      <div class="col">
+        <div class="inputs">
+          <div>
+            <label class="small">Sleep Night (hours)</label>
+            <input id="sleepNight" type="number" min="0" max="24" step="0.25" />
+          </div>
+          <div>
+            <label class="small">Sleep Day (hours)</label>
+            <input id="sleepDay" type="number" min="0" max="24" step="0.25" />
+          </div>
+          <div>
+            <label class="small">Phone time (minutes)</label>
+            <input id="phoneMinutes" type="number" min="0" max="1440" />
+          </div>
+          <div>
+            <label class="small">Mood (-5 to 5)</label>
+            <input id="moodVal" type="range" min="-5" max="5" step="1" />
+            <div class="small muted">Value: <span id="moodLabel">0</span></div>
+          </div>
+          <div>
+            <label class="small">Namaz count (0-5)</label>
+            <input id="namaz" type="number" min="0" max="5" />
+          </div>
+          <div>
+            <label class="small">Water count (0-5)</label>
+            <input id="water" type="number" min="0" max="5" />
+          </div>
+        </div>
+
+        <div style="margin-top:10px">
+          <label class="small">Top 3 apps (minutes)</label>
+          <div style="display:flex;gap:6px;margin-top:6px">
+            <input id="app1" placeholder="App 1" />
+            <input id="app1m" type="number" placeholder="min" style="width:90px" />
+          </div>
+          <div style="display:flex;gap:6px;margin-top:6px">
+            <input id="app2" placeholder="App 2" />
+            <input id="app2m" type="number" placeholder="min" style="width:90px" />
+          </div>
+          <div style="display:flex;gap:6px;margin-top:6px">
+            <input id="app3" placeholder="App 3" />
+            <input id="app3m" type="number" placeholder="min" style="width:90px" />
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Modal for manage activities -->
+<div id="manageModal" class="modal" style="display:none">
+  <div class="modal-inner card">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+      <div><strong>Manage Activities & Tasks</strong><div class="small muted">Edit colors, add/remove items</div></div>
+      <div><button id="closeManage" class="small-btn">Close</button></div>
+    </div>
+
+    <div style="display:flex;gap:12px">
+      <div style="flex:1">
+        <label class="small">Activities</label>
+        <div id="manageActivitiesList" style="display:flex;flex-direction:column;gap:8px;max-height:360px;overflow:auto"></div>
+        <div style="display:flex;gap:8px;margin-top:8px">
+          <input id="newActName" placeholder="New activity name" />
+          <input id="newActColor" type="color" value="#ef4444" />
+          <button id="saveNewAct" class="small-btn">Add</button>
+        </div>
+      </div>
+
+      <div style="flex:1">
+        <label class="small">Weekend tasks</label>
+        <div id="manageWeekTasks" style="display:flex;flex-direction:column;gap:8px;max-height:360px;overflow:auto"></div>
+        <div style="display:flex;gap:8px;margin-top:8px">
+          <input id="newTaskName" placeholder="New task name" />
+          <input id="newTaskColor" type="color" value="#10b981" />
+          <button id="saveNewTask" class="small-btn">Add</button>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+/* Monthly Consistency Dashboard - Single file app
+   Features:
+    - Persistent localStorage per month
+    - Activities list (editable + color)
+    - Day editor modal (activities toggles, sleep night/day, phone minutes, top 3 apps, mood, namaz, water)
+    - Weekend tasks (sat/sun) editable, applied per weekend day
+    - Charts: stacked activities, mood line, sleep/phone bars, polar for apps
+    - Export/Import JSON
+    - Bulk fill and reset controls
+*/
+
+/* ---------- Utilities ---------- */
+const LS_KEY = 'monthlyDashboardData_v1';
+const DEFAULT_ACTIVITIES = [
+  {id: 'book', name: 'Book read', color:'#ef4444'},
+  {id: 'upskill', name: 'Up skill (Data Science)', color:'#7c3aed'},
+  {id: 'quran', name: 'Read Quran', color:'#059669'},
+  {id: 'exercise', name: 'Exercise / Morning Walk', color:'#f59e0b'},
+  {id: 'junk', name: 'Junk & Packed Food', color:'#ef7a2a'},
+  {id: 'medium', name: 'Medium Blog', color:'#3b82f6'},
+  {id: 'compliment', name: 'Compliment', color:'#06b6d4'},
+  {id: 'help', name: 'Help', color:'#8b5cf6'},
+  {id: 'smile', name: 'Make Smile (other)', color:'#f472b6'},
+];
+
+const DEFAULT_WEEKEND_TASKS = [
+  {id:'linkedin', name:'LinkedIn page Post', color:'#0ea5e9'},
+  {id:'diary', name:'Diary Writing', color:'#f97316'},
+  {id:'paper', name:'Read Research Paper', color:'#a78bfa'},
+  {id:'kaggle', name:'Kaggle Competition', color:'#10b981'},
+  {id:'sketch', name:'Sketching', color:'#ef4444'},
+];
+
+/* ---------- State ---------- */
+let activities = [];
+let weekendTasks = [];
+let state = {}; // collection of months -> days
+let currentMonth; // "YYYY-MM"
+let editingDay = null;
+
+/* Load or init from localStorage */
+function loadState(){
+  const raw = localStorage.getItem(LS_KEY);
+  if(raw){
+    try{
+      const parsed = JSON.parse(raw);
+      activities = parsed.activities || DEFAULT_ACTIVITIES.slice();
+      weekendTasks = parsed.weekendTasks || DEFAULT_WEEKEND_TASKS.slice();
+      state = parsed.state || {};
+    }catch(e){
+      console.error('Invalid saved data, resetting');
+      activities = DEFAULT_ACTIVITIES.slice();
+      weekendTasks = DEFAULT_WEEKEND_TASKS.slice();
+      state = {};
+    }
+  } else {
+    activities = DEFAULT_ACTIVITIES.slice();
+    weekendTasks = DEFAULT_WEEKEND_TASKS.slice();
+    state = {};
+  }
+}
+
+/* Persist */
+function saveAll(){
+  const payload = {activities, weekendTasks, state};
+  localStorage.setItem(LS_KEY, JSON.stringify(payload));
+}
+
+/* Helpers: date processing */
+function daysInMonth(year, month){ return new Date(year, month, 0).getDate(); }
+function monthKeyFromDate(d){ // d: Date
+  const y = d.getFullYear(), m = (d.getMonth()+1).toString().padStart(2,'0'); return `${y}-${m}`;
+}
+function normalizeMonthKey(key){ // ensure YYYY-MM
+  const parts = key.split('-'); if(parts.length===2) return key; return monthKeyFromDate(new Date());
+}
+
+/* Create month data skeleton */
+function ensureMonth(key){
+  key = normalizeMonthKey(key);
+  if(!state[key]){
+    const [y, m] = key.split('-'); const days = daysInMonth(parseInt(y), parseInt(m));
+    state[key] = {days: {}};
+    for(let d=1; d<=days; d++){
+      state[key].days[d] = {
+        activities: {}, // activityId -> boolean
+        sleepNight: 0, sleepDay:0, phoneMinutes:0,
+        apps: [{name:'',min:0},{name:'',min:0},{name:'',min:0}],
+        mood:0, namaz:0, water:0, note:'', weekendCompleted: {}
+      };
+    }
+    saveAll();
+  }
+}
+
+/* ---------- UI Rendering ---------- */
+const monthPicker = document.getElementById('monthPicker');
+const titleMonth = document.getElementById('titleMonth');
+const subtitle = document.getElementById('subtitle');
+const dayGrid = document.getElementById('dayGrid');
+const activitiesContainer = document.getElementById('activitiesContainer');
+const manageActivitiesList = document.getElementById('manageActivitiesList');
+const manageWeekTasks = document.getElementById('manageWeekTasks');
+const weekGrid = document.getElementById('weekendGrid');
+const statsSummary = document.getElementById('statsSummary');
+const weekendSummary = document.getElementById('weekendSummary');
+
+/* Initial load */
+loadState();
+
+/* Initialize monthPicker to today's month if not set */
+const today = new Date();
+monthPicker.value = monthKeyFromDate(today);
+currentMonth = monthPicker.value;
+ensureMonth(currentMonth);
+
+function renderActivitiesList(){
+  activitiesContainer.innerHTML='';
+  activities.forEach(act=>{
+    const div = document.createElement('div'); div.className='activity-row';
+    const color = document.createElement('div'); color.className='color-box'; color.style.background=act.color;
+    const name = document.createElement('div'); name.textContent = act.name; name.style.flex='1';
+    const editBtn = document.createElement('button'); editBtn.className='small-btn'; editBtn.textContent='Edit';
+    editBtn.onclick = ()=> openManageModal(() => {
+      // focus on this activity input
+      const input = document.querySelector(`#manageActivitiesList [data-id="${act.id}"] input[name="name"]`);
+      if(input) input.focus();
+    });
+    div.append(color, name, editBtn);
+    activitiesContainer.appendChild(div);
+  });
+}
+
+function renderManageLists(){
+  manageActivitiesList.innerHTML='';
+  activities.forEach(act=>{
+    const row = document.createElement('div'); row.style.display='flex'; row.style.gap='8px'; row.dataset.id = act.id;
+    row.innerHTML = `
+      <input name="name" value="${escapeHtml(act.name)}" style="flex:1;background:transparent;border:1px solid rgba(255,255,255,0.04);padding:6px;border-radius:6px;color:inherit" />
+      <input name="color" type="color" value="${act.color}" />
+      <button class="small-btn">Save</button>
+      <button class="small-btn" data-delete>Delete</button>
+    `;
+    const nameInp = row.querySelector('input[name="name"]');
+    const colorInp = row.querySelector('input[name="color"]');
+    const saveBtn = row.querySelector('button.small-btn');
+    const delBtn = row.querySelector('button[data-delete]');
+    saveBtn.onclick = ()=>{
+      act.name = nameInp.value || act.name;
+      act.color = colorInp.value || act.color;
+      saveAll(); renderActivitiesList(); renderManageLists(); renderAll();
+    };
+    delBtn.onclick = ()=>{
+      if(confirm('Delete activity? This will remove it from new toggles but existing day records keep the id.')) {
+        activities = activities.filter(a=>a.id!==act.id);
+        saveAll(); renderActivitiesList(); renderManageLists(); renderAll();
+      }
+    };
+    manageActivitiesList.appendChild(row);
+  });
+
+  manageWeekTasks.innerHTML='';
+  weekendTasks.forEach(t=>{
+    const row = document.createElement('div'); row.style.display='flex'; row.style.gap='8px'; row.dataset.id=t.id;
+    row.innerHTML = `
+      <input name="name" value="${escapeHtml(t.name)}" style="flex:1;background:transparent;border:1px solid rgba(255,255,255,0.04);padding:6px;border-radius:6px;color:inherit" />
+      <input name="color" type="color" value="${t.color}" />
+      <button class="small-btn">Save</button>
+      <button class="small-btn" data-delete>Delete</button>
+    `;
+    const nameInp = row.querySelector('input[name="name"]');
+    const colorInp = row.querySelector('input[name="color"]');
+    const saveBtn = row.querySelector('button.small-btn');
+    const delBtn = row.querySelector('button[data-delete]');
+    saveBtn.onclick = ()=> { t.name = nameInp.value || t.name; t.color = colorInp.value; saveAll(); renderManageLists(); renderAll();}
+    delBtn.onclick = ()=> { if(confirm('Delete task?')){ weekendTasks = weekendTasks.filter(x=>x.id!==t.id); saveAll(); renderManageLists(); renderAll(); } }
+    manageWeekTasks.appendChild(row);
+  });
+}
+
+/* Create a unique id */
+function uid(prefix='id'){ return prefix + Math.random().toString(36).slice(2,9);}
+
+/* Render calendar grid */
+function renderCalendar(){
+  ensureMonth(currentMonth);
+  const [y, m] = currentMonth.split('-');
+  const yr = parseInt(y), mo = parseInt(m);
+  const firstDay = new Date(yr, mo-1,1).getDay(); // 0 Sun .. 6 Sat
+  const days = daysInMonth(yr, mo);
+  dayGrid.innerHTML = '';
+
+  // Week day headers
+  const weeks = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+  for(let i=0;i<7;i++){
+    const col = document.createElement('div'); col.className='day-cell'; col.style.minHeight='38px';
+    col.innerHTML = `<div class="day-header"><div class="day-number">${weeks[i]}</div></div>`;
+    dayGrid.appendChild(col);
+  }
+
+  // blanks before first
+  for(let b=0;b<firstDay;b++){
+    const blank = document.createElement('div'); blank.className='day-cell';
+    blank.style.opacity='0.15'; blank.innerHTML = '';
+    dayGrid.appendChild(blank);
+  }
+
+  // days
+  for(let d=1; d<=days; d++){
+    const cell = document.createElement('div'); cell.className='day-cell';
+    const dayData = state[currentMonth].days[d];
+    const header = document.createElement('div'); header.className='day-header';
+    header.innerHTML = `<div class="day-number">${d}</div><div class="small muted">${(new Date(yr,mo-1,d)).toLocaleDateString(undefined,{weekday:'short'})}</div>`;
+    cell.appendChild(header);
+
+    const dots = document.createElement('div'); dots.className='dots';
+    // show color dots for activities that are true
+    activities.forEach(act=>{
+      const on = dayData.activities && dayData.activities[act.id];
+      if(on){
+        const dot = document.createElement('div'); dot.className='dot'; dot.title = act.name;
+        dot.style.background = act.color;
+        dots.appendChild(dot);
+      }
+    });
+    // mood indicator small
+    const moodBadge = document.createElement('div'); moodBadge.className='small muted'; moodBadge.style.marginTop='6px';
+    moodBadge.textContent = `Mood:${dayData.mood||0} | N:${dayData.sleepNight||0}h`;
+    cell.appendChild(dots);
+    cell.appendChild(moodBadge);
+
+    // weekend tasks quick marker
+    const wkDiv = document.createElement('div'); wkDiv.style.marginTop='6px';
+    const weekday = new Date(yr,mo-1,d).getDay();
+    if(weekday===6 || weekday===0){
+      // show small pills for tasks completed (if any)
+      const completed = dayData.weekendCompleted || {};
+      weekendTasks.forEach(t=>{
+        const pill = document.createElement('span'); pill.className='pill';
+        pill.textContent = t.name.split(' ')[0];
+        pill.style.background = completed[t.id] ? t.color : 'transparent';
+        pill.style.color = completed[t.id] ? '#000' : 'var(--muted)';
+        pill.style.border = completed[t.id] ? 'none' : '1px solid rgba(255,255,255,0.03)';
+        wkDiv.appendChild(pill);
+      });
+      cell.appendChild(wkDiv);
+    }
+
+    cell.onclick = ()=> openDayModal(d);
+    dayGrid.appendChild(cell);
+  }
+
+  // basic stats
+  const daysWithActivity = Object.keys(state[currentMonth].days).filter(k=>{
+    const dd = state[currentMonth].days[k];
+    return Object.values(dd.activities||{}).some(v=>v);
+  }).length;
+  statsSummary.textContent = `${daysWithActivity}/${days} days with activities`;
+}
+
+/* Render weekend grid summary */
+function renderWeekendGrid(){
+  weekGrid.innerHTML='';
+  ensureMonth(currentMonth);
+  const [y, m] = currentMonth.split('-'); const yr=parseInt(y), mo=parseInt(m);
+  const days = daysInMonth(yr,mo);
+  for(let d=1; d<=days; d++){
+    const dt = new Date(yr,mo-1,d); if(dt.getDay()!==6 && dt.getDay()!==0) continue;
+    const cell = document.createElement('div'); cell.className='cell';
+    cell.style.borderRadius='6px'; cell.style.padding='6px'; cell.style.minHeight='56px';
+    cell.style.background = 'rgba(255,255,255,0.02)';
+    const dayData = state[currentMonth].days[d];
+    const h = document.createElement('div'); h.style.fontWeight='600'; h.textContent = `${d} ${dt.toLocaleDateString(undefined,{weekday:'short'})}`;
+    cell.appendChild(h);
+    // tasks statuses
+    weekendTasks.forEach(t=>{
+      const done = dayData.weekendCompleted && dayData.weekendCompleted[t.id];
+      const tspan = document.createElement('div');
+      tspan.textContent = `${done? '✓':'○'} ${t.name}`;
+      tspan.style.fontSize='13px'; tspan.style.marginTop='6px';
+      tspan.style.color = done? '#000' : 'var(--muted)';
+      if(done) tspan.style.background = t.color; else tspan.style.opacity = 0.7;
+      tspan.style.borderRadius='6px'; tspan.style.padding='4px';
+      tspan.style.cursor = 'pointer';
+      tspan.onclick = (ev)=>{ ev.stopPropagation(); dayData.weekendCompleted = dayData.weekendCompleted || {}; dayData.weekendCompleted[t.id] = !done; saveAll(); renderWeekendGrid(); renderCalendar(); renderAllCharts(); };
+      cell.appendChild(tspan);
+    });
+    weekGrid.appendChild(cell);
+  }
+
+  // summary
+  let totalSlots=0, totalDone=0;
+  for(let d=1; d<=days; d++){
+    const dt=new Date(yr,mo-1,d); if(dt.getDay()!==6 && dt.getDay()!==0) continue;
+    totalSlots += weekendTasks.length;
+    const completed = state[currentMonth].days[d].weekendCompleted || {};
+    weekendTasks.forEach(t=>{ if(completed[t.id]) totalDone++; });
+  }
+  weekendSummary.textContent = `${totalDone}/${Math.max(totalSlots,1)} tasks done`;
+}
+
+/* ---------- Day Modal ---------- */
+const dayModal = document.getElementById('dayModal');
+const modalTitle = document.getElementById('modalTitle');
+const modalSub = document.getElementById('modalSub');
+const modalActivities = document.getElementById('modalActivities');
+const sleepNight = document.getElementById('sleepNight');
+const sleepDay = document.getElementById('sleepDay');
+const phoneMinutes = document.getElementById('phoneMinutes');
+const moodVal = document.getElementById('moodVal');
+const moodLabel = document.getElementById('moodLabel');
+const namaz = document.getElementById('namaz');
+const water = document.getElementById('water');
+const app1 = document.getElementById('app1'); const app1m = document.getElementById('app1m');
+const app2 = document.getElementById('app2'); const app2m = document.getElementById('app2m');
+const app3 = document.getElementById('app3'); const app3m = document.getElementById('app3m');
+const dayNote = document.getElementById('dayNote');
+const saveDayBtn = document.getElementById('saveDay');
+const closeModalBtn = document.getElementById('closeModal');
+
+moodVal.oninput = ()=> moodLabel.textContent = moodVal.value;
+
+function openDayModal(day){
+  ensureMonth(currentMonth);
+  editingDay = day;
+  const [y,m] = currentMonth.split('-');
+  const dt = new Date(parseInt(y), parseInt(m)-1, day);
+  modalTitle.textContent = `Edit ${dt.toLocaleDateString(undefined,{weekday:'short', year:'numeric', month:'short', day:'numeric'})}`;
+  modalSub.textContent = `Day ${day} — ${currentMonth}`;
+  const data = state[currentMonth].days[day];
+
+  // activities toggles
+  modalActivities.innerHTML = '';
+  activities.forEach(act=>{
+    const wrap = document.createElement('label'); wrap.style.display='flex'; wrap.style.alignItems='center'; wrap.style.gap='8px';
+    const checkbox = document.createElement('input'); checkbox.type='checkbox'; checkbox.checked = !!(data.activities && data.activities[act.id]);
+    const color = document.createElement('div'); color.className='color-box'; color.style.background = act.color;
+    const span = document.createElement('div'); span.textContent = act.name; span.style.flex='1';
+    wrap.appendChild(checkbox); wrap.appendChild(color); wrap.appendChild(span);
+    checkbox.onchange = ()=> { data.activities = data.activities || {}; data.activities[act.id] = checkbox.checked; };
+    modalActivities.appendChild(wrap);
+  });
+
+  sleepNight.value = data.sleepNight || 0;
+  sleepDay.value = data.sleepDay || 0;
+  phoneMinutes.value = data.phoneMinutes || 0;
+  app1.value = data.apps?.[0]?.name || '';
+  app1m.value = data.apps?.[0]?.min || 0;
+  app2.value = data.apps?.[1]?.name || '';
+  app2m.value = data.apps?.[1]?.min || 0;
+  app3.value = data.apps?.[2]?.name || '';
+  app3m.value = data.apps?.[2]?.min || 0;
+  moodVal.value = data.mood || 0; moodLabel.textContent = moodVal.value;
+  namaz.value = data.namaz || 0; water.value = data.water || 0; dayNote.value = data.note || '';
+
+  dayModal.style.display = 'flex';
+}
+
+closeModalBtn.onclick = ()=> { dayModal.style.display='none'; editingDay=null; };
+
+saveDayBtn.onclick = ()=>{
+  if(!editingDay) return;
+  const data = state[currentMonth].days[editingDay];
+  data.sleepNight = Number(sleepNight.value)||0;
+  data.sleepDay = Number(sleepDay.value)||0;
+  data.phoneMinutes = Number(phoneMinutes.value)||0;
+  data.apps = [
+    {name:app1.value||'', min: Number(app1m.value)||0},
+    {name:app2.value||'', min: Number(app2m.value)||0},
+    {name:app3.value||'', min: Number(app3m.value)||0},
+  ];
+  data.mood = Number(moodVal.value)||0;
+  data.namaz = Math.max(0, Math.min(5, Number(namaz.value)||0));
+  data.water = Math.max(0, Math.min(5, Number(water.value)||0));
+  data.note = dayNote.value || '';
+  // activities already bound via onchange
+  saveAll();
+  dayModal.style.display='none';
+  editingDay=null;
+  renderCalendar(); renderWeekendGrid(); renderAllCharts();
+};
+
+/* ---------- Manage Modal ---------- */
+const manageModal = document.getElementById('manageModal');
+document.getElementById('openManage').onclick = ()=> openManageModal();
+document.getElementById('closeManage').onclick = ()=> manageModal.style.display='none';
+function openManageModal(onopen){
+  renderManageLists();
+  manageModal.style.display='flex';
+  if(onopen) onopen();
+}
+
+/* Add new activity */
+document.getElementById('saveNewAct').onclick = ()=>{
+  const name = document.getElementById('newActName').value.trim();
+  const color = document.getElementById('newActColor').value || '#888';
+  if(!name){ alert('Name required'); return; }
+  const id = uid('act_');
+  activities.push({id, name, color});
+  document.getElementById('newActName').value='';
+  saveAll(); renderActivitiesList(); renderManageLists(); renderAll();
+};
+
+/* Add new weekend task */
+document.getElementById('saveNewTask').onclick = ()=>{
+  const name = document.getElementById('newTaskName').value.trim();
+  const color = document.getElementById('newTaskColor').value || '#888';
+  if(!name){ alert('Name required'); return; }
+  const id = uid('task_');
+  weekendTasks.push({id, name, color});
+  document.getElementById('newTaskName').value='';
+  saveAll(); renderManageLists(); renderWeekendGrid(); renderCalendar();
+};
+
+/* Quick add activities btn */
+document.getElementById('addActivityBtn').onclick = ()=> openManageModal();
+document.getElementById('addWeekendTaskBtn').onclick = ()=> openManageModal();
+
+/* Bulk fill today: toggles on today's selected activities */
+document.getElementById('bulkFillBtn').onclick = ()=>{
+  const todayKey = monthKeyFromDate(new Date());
+  const d = new Date(); const day = d.getDate();
+  currentMonth = todayKey; monthPicker.value = todayKey; ensureMonth(currentMonth);
+  const arr = prompt('Enter activity ids (comma) or names to toggle for today. You can copy activity ids from Manage panel, or names (case-insensitive).','');
+  if(!arr) return;
+  const parts = arr.split(',').map(s=>s.trim()).filter(Boolean);
+  const data = state[currentMonth].days[day];
+  parts.forEach(p=>{
+    // try match by id or name
+    let act = activities.find(a=>a.id===p) || activities.find(a=>a.name.toLowerCase()===p.toLowerCase());
+    if(act){ data.activities[act.id] = true; }
+  });
+  saveAll(); renderCalendar(); renderAllCharts(); alert('Bulk applied for today');
+};
+
+/* Reset / clear functions */
+document.getElementById('clearAllBtn').onclick = ()=>{
+  if(!confirm('Clear all saved data for this month?')) return;
+  const key = currentMonth; if(state[key]){ delete state[key]; saveAll(); ensureMonth(key); renderAll(); }
+};
+document.getElementById('resetBtn').onclick = ()=>{
+  if(!confirm('Reset entire app (clear everything stored locally)?')) return;
+  localStorage.removeItem(LS_KEY); loadState(); currentMonth = monthPicker.value = monthKeyFromDate(new Date()); ensureMonth(currentMonth); renderAll();
+};
+document.getElementById('todayBtn').onclick = ()=> { const tk = monthKeyFromDate(new Date()); monthPicker.value = tk; currentMonth = tk; ensureMonth(currentMonth); renderAll(); };
+
+/* Export/Import */
+document.getElementById('exportBtn').onclick = ()=>{
+  const dataStr = JSON.stringify({activities, weekendTasks, state}, null, 2);
+  const blob = new Blob([dataStr], {type:'application/json'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a'); a.href=url; a.download = `dashboard-backup-${currentMonth}.json`; document.body.appendChild(a); a.click(); a.remove();
+};
+
+document.getElementById('importInput').onchange = (e)=>{
+  const f = e.target.files[0]; if(!f) return;
+  const reader = new FileReader();
+  reader.onload = function(ev){
+    try{
+      const parsed = JSON.parse(ev.target.result);
+      if(parsed.activities && parsed.weekendTasks && parsed.state){
+        activities = parsed.activities; weekendTasks = parsed.weekendTasks; state = parsed.state;
+        saveAll(); renderAll(); alert('Imported successfully');
+      } else {
+        alert('Invalid format. Expecting activities, weekendTasks, and state keys.');
+      }
+    }catch(err){ alert('Invalid JSON'); }
+  };
+  reader.readAsText(f);
+};
+
+/* Month change */
+monthPicker.onchange = (e)=>{ currentMonth = e.target.value; ensureMonth(currentMonth); renderAll(); };
+
+/* Escape HTML safe */
+function escapeHtml(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+
+/* ---------- Charts ---------- */
+let activitiesChart, moodChart, sleepChart, appsChart;
+function createCharts(){
+  const ctxAct = document.getElementById('activitiesChart').getContext('2d');
+  const ctxMood = document.getElementById('moodChart').getContext('2d');
+  const ctxSleep = document.getElementById('sleepChart').getContext('2d');
+  const ctxApps = document.getElementById('appsChart').getContext('2d');
+
+  activitiesChart = new Chart(ctxAct, { type:'bar', data:{labels:[], datasets:[]}, options:{
+    responsive:true, plugins:{legend:{position:'bottom'}}, scales:{x:{stacked:true}, y:{stacked:true, beginAtZero:true, ticks:{precision:0}}}
+  }});
+
+  moodChart = new Chart(ctxMood, { type:'line', data:{labels:[], datasets:[{label:'Mood', data:[], fill:true}]}, options:{
+      responsive:true, scales:{y:{min:-5,max:5}}
+  }});
+
+  sleepChart = new Chart(ctxSleep, { type:'bar', data:{labels:[], datasets:[
+    {label:'Night sleep (h)', data:[]},
+    {label:'Day sleep (h)', data:[]},
+    {label:'Phone (minutes)', data:[]}
+  ]}, options:{responsive:true, scales:{y:{beginAtZero:true}}}});
+
+  appsChart = new Chart(ctxApps, { type:'polarArea', data:{labels:[], datasets:[{data:[]}]}, options:{responsive:true}});
+}
+
+/* Build data for charts and render */
+function renderAllCharts(){
+  ensureMonth(currentMonth);
+  const days = Object.keys(state[currentMonth].days).map(n=>parseInt(n)).sort((a,b)=>a-b);
+  const labels = days.map(d=>String(d));
+  // activities stacked datasets
+  const datasets = activities.map(act=>{
+    const data = days.map(d=> state[currentMonth].days[d].activities && state[currentMonth].days[d].activities[act.id] ? 1 : 0);
+    return {label:act.name, data, backgroundColor:act.color, stack: 'activities'};
+  });
+
+  activitiesChart.data.labels = labels;
+  activitiesChart.data.datasets = datasets;
+  activitiesChart.update();
+
+  // mood
+  moodChart.data.labels = labels;
+  moodChart.data.datasets[0].data = days.map(d=> state[currentMonth].days[d].mood || 0);
+  moodChart.data.datasets[0].backgroundColor = 'rgba(124,58,237,0.15)';
+  moodChart.data.datasets[0].borderColor = 'rgba(124,58,237,0.95)';
+  moodChart.update();
+
+  // sleep/phone
+  sleepChart.data.labels = labels;
+  sleepChart.data.datasets[0].data = days.map(d=> state[currentMonth].days[d].sleepNight || 0);
+  sleepChart.data.datasets[0].backgroundColor = 'rgba(5,150,105,0.7)';
+  sleepChart.data.datasets[1].data = days.map(d=> state[currentMonth].days[d].sleepDay || 0);
+  sleepChart.data.datasets[1].backgroundColor = 'rgba(17,24,39,0.6)';
+  sleepChart.data.datasets[2].data = days.map(d=> state[currentMonth].days[d].phoneMinutes || 0);
+  sleepChart.data.datasets[2].backgroundColor = 'rgba(59,130,246,0.7)';
+  sleepChart.update();
+
+  // apps aggregation
+  const appTotals = {};
+  days.forEach(d=>{
+    (state[currentMonth].days[d].apps || []).forEach(a=>{
+      if(!a || !a.name) return;
+      appTotals[a.name] = (appTotals[a.name]||0) + Number(a.min || 0);
+    });
+  });
+  const appLabels = Object.keys(appTotals).sort((a,b)=>appTotals[b]-appTotals[a]).slice(0,8);
+  appsChart.data.labels = appLabels;
+  appsChart.data.datasets[0].data = appLabels.map(l=>appTotals[l]||0);
+  appsChart.update();
+}
+
+/* ---------- Render all ---------- */
+function renderAll(){
+  renderActivitiesList(); renderCalendar(); renderWeekendGrid(); renderAllCharts();
+  titleMonth.textContent = new Date(currentMonth + '-01').toLocaleDateString(undefined,{month:'long', year:'numeric'});
+  subtitle.textContent = `Month: ${currentMonth}`;
+}
+
+/* ---------- Init ---------- */
+createCharts();
+renderAll();
+
+/* ---------- Misc Controls ---------- */
+// Manage modal close by clicking backdrop
+document.getElementById('manageModal').addEventListener('click', (ev)=>{ if(ev.target===document.getElementById('manageModal')) manageModal.style.display='none'; });
+document.getElementById('dayModal').addEventListener('click', (ev)=>{ if(ev.target===document.getElementById('dayModal')) dayModal.style.display='none'; });
+
+/* Render when app first loads */
+renderManageLists();
+
+/* Utilities: small helper to re-render charts after changes */
+function renderAllChartsDebounced(){ renderAllCharts(); }
+window.addEventListener('storage', ()=>{ loadState(); renderAll(); });
+
+/* Escape: ensure currentMonth exists */
+ensureMonth(currentMonth);
+
+/* safety: initialize sample values for first 3 days for demonstration (only if month empty) */
+(function maybeSeed(){
+  const days = Object.keys(state[currentMonth].days);
+  const any = days.some(k=> Object.values(state[currentMonth].days[k].activities||{}).some(v=>v) || state[currentMonth].days[k].sleepNight || state[currentMonth].days[k].phoneMinutes );
+  if(!any){
+    state[currentMonth].days[1].activities = {}; state[currentMonth].days[1].activities[activities[0].id] = true;
+    state[currentMonth].days[1].mood = 2; state[currentMonth].days[1].sleepNight=7; state[currentMonth].days[1].phoneMinutes=60;
+    state[currentMonth].days[2].activities = {}; state[currentMonth].days[2].activities[activities[1].id] = true;
+    state[currentMonth].days[2].mood = -1; state[currentMonth].days[2].sleepNight=6.5; state[currentMonth].days[2].phoneMinutes=180;
+    saveAll();
+    renderAll();
+  }
+})();
+
+/* small helper UI: clicking on 'Export' also copies JSON to clipboard (optional) */
+document.getElementById('exportBtn').addEventListener('dblclick', ()=>{
+  const payload = JSON.stringify({activities, weekendTasks, state}, null, 2);
+  navigator.clipboard?.writeText(payload).then(()=> alert('JSON copied to clipboard'), ()=>alert('Copy failed'));
+});
+
+/* Helper: initial render call to ensure charts populated */
+renderAllCharts();
+
+</script>
+</body>
+</html>
