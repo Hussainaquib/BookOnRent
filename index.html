@@ -1,0 +1,586 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>BookOnRent | Read More, Spend Less</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Font Awesome for Icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <style>
+    /* Custom animations */
+    .fade-in {
+      opacity: 0;
+      transform: translateY(20px);
+      transition: opacity 0.6s ease-out, transform 0.6s ease-out;
+    }
+    .fade-in.visible {
+      opacity: 1;
+      transform: translateY(0);
+    }
+    
+    /* Smooth scrolling */
+    html {
+      scroll-behavior: smooth;
+    }
+
+    /* Nav link hover effect */
+    .nav-link {
+      position: relative;
+      transition: color 0.3s ease;
+    }
+    .nav-link::after {
+      content: '';
+      position: absolute;
+      width: 0;
+      height: 2px;
+      bottom: -2px;
+      left: 0;
+      background-color: #38b2ac; /* Teal-500 */
+      transition: width 0.3s ease;
+    }
+    .nav-link:hover::after {
+      width: 100%;
+    }
+
+    /* Card hover effect */
+    .card {
+      transition: transform 0.3s ease, box-shadow 0.3s ease;
+    }
+    .card:hover {
+      transform: translateY(-5px);
+      box-shadow: 0 15px 30px rgba(0, 0, 0, 0.1);
+    }
+
+    /* Typewriter effect */
+    .typewriter {
+      display: inline-block;
+      overflow: hidden;
+      border-right: 0.15em solid white;
+      white-space: nowrap;
+      animation: typing 3.5s steps(40, end), blink-caret 0.75s step-end infinite;
+    }
+    @keyframes typing {
+      from { width: 0; }
+      to { width: 100%; }
+    }
+    @keyframes blink-caret {
+      from, to { border-color: transparent; }
+      50% { border-color: white; }
+    }
+
+    /* Back to top button */
+    #back-to-top {
+      position: fixed;
+      bottom: 20px;
+      right: 20px;
+      background-color: #38b2ac;
+      color: white;
+      width: 50px;
+      height: 50px;
+      border-radius: 50%;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: opacity 0.3s ease, background-color 0.3s;
+      box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+      z-index: 50;
+    }
+    #back-to-top:hover {
+      background-color: #2c7a7b;
+    }
+
+    /* Subtle background pattern */
+    .pattern-bg {
+      background-color: #f9fafb;
+      background-image: radial-gradient(#cbd5e0 1px, transparent 1px);
+      background-size: 20px 20px;
+    }
+    
+    /* Book Image Container */
+    .book-cover {
+      height: 250px; /* Fixed height for uniformity */
+      width: 100%;
+      object-fit: cover;
+      border-radius: 0.5rem;
+    }
+  </style>
+</head>
+<body class="bg-gray-50 font-sans text-gray-800">
+
+  <!-- Navigation -->
+  <nav class="bg-white shadow-md sticky top-0 z-50">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="flex justify-between h-16">
+        <!-- Logo/Brand -->
+        <div class="flex items-center">
+          <a href="#home" class="flex items-center gap-2">
+            <i class="fas fa-book-reader text-teal-500 text-2xl"></i>
+            <span class="text-xl font-bold text-gray-800">BookOnRent</span>
+          </a>
+        </div>
+        
+        <!-- Desktop Menu -->
+        <div class="hidden md:flex items-center space-x-8">
+          <a href="#home" class="nav-link text-gray-600 hover:text-teal-500 font-medium">Home</a>
+          <a href="#about" class="nav-link text-gray-600 hover:text-teal-500 font-medium">About & Rules</a>
+          <div class="relative group">
+            <button class="nav-link text-gray-600 hover:text-teal-500 font-medium flex items-center gap-1">
+              Libraries <i class="fas fa-chevron-down text-xs"></i>
+            </button>
+            <!-- Dropdown -->
+            <div class="absolute left-0 mt-2 w-48 bg-white rounded-md shadow-lg py-1 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-300 transform origin-top-left">
+              <a href="#kolkata" class="block px-4 py-2 text-sm text-gray-700 hover:bg-teal-50">Kolkata</a>
+              <a href="#raipur" class="block px-4 py-2 text-sm text-gray-700 hover:bg-teal-50">Raipur</a>
+              <a href="#delhi" class="block px-4 py-2 text-sm text-gray-700 hover:bg-teal-50">Delhi</a>
+              <a href="#mumbai" class="block px-4 py-2 text-sm text-gray-700 hover:bg-teal-50">Mumbai</a>
+            </div>
+          </div>
+          <a href="#contact" class="nav-link text-gray-600 hover:text-teal-500 font-medium">Contact</a>
+        </div>
+
+        <!-- Mobile Menu Button (Hamburger) -->
+        <div class="flex md:hidden items-center">
+          <button id="mobile-menu-btn" class="text-gray-600 hover:text-teal-500 focus:outline-none">
+            <i class="fas fa-bars text-2xl"></i>
+          </button>
+        </div>
+      </div>
+    </div>
+    <!-- Mobile Menu Panel -->
+    <div id="mobile-menu" class="hidden md:hidden bg-white border-t">
+      <div class="px-2 pt-2 pb-3 space-y-1 sm:px-3">
+        <a href="#home" class="block px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:text-teal-500 hover:bg-gray-50">Home</a>
+        <a href="#about" class="block px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:text-teal-500 hover:bg-gray-50">About</a>
+        <a href="#kolkata" class="block px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:text-teal-500 hover:bg-gray-50">Kolkata Library</a>
+        <a href="#raipur" class="block px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:text-teal-500 hover:bg-gray-50">Raipur Library</a>
+        <a href="#delhi" class="block px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:text-teal-500 hover:bg-gray-50">Delhi Library</a>
+        <a href="#mumbai" class="block px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:text-teal-500 hover:bg-gray-50">Mumbai Library</a>
+        <a href="#contact" class="block px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:text-teal-500 hover:bg-gray-50">Contact</a>
+      </div>
+    </div>
+  </nav>
+
+  <!-- Hero Section -->
+  <section id="home" class="relative min-h-[90vh] flex items-center justify-center bg-gradient-to-br from-teal-600 to-blue-800 text-white overflow-hidden">
+    <div class="absolute inset-0 bg-black opacity-30"></div> 
+    
+    <div class="relative z-10 text-center px-4 max-w-4xl mx-auto fade-in">
+      <!-- Logo Container -->
+      <div class="w-40 h-40 bg-white rounded-full mx-auto mb-8 p-2 shadow-2xl flex items-center justify-center transform hover:scale-105 transition duration-500">
+        <!-- REPLACE 'Logo.png' WITH YOUR ACTUAL FILE PATH -->
+        <img src="Logo.png" onerror="this.src='https://cdn-icons-png.flaticon.com/512/3389/3389081.png'" alt="BookOnRent Logo" class="w-full h-full object-contain rounded-full">
+      </div>
+      
+      <h1 class="text-5xl md:text-7xl font-extrabold mb-4 tracking-tight">BookOnRent</h1>
+      <div class="h-12"> <!-- Fixed height for typewriter -->
+        <p class="text-xl md:text-3xl font-light text-teal-100 typewriter">Read Books on Rental Basis</p>
+      </div>
+      <p class="mt-8 text-lg md:text-xl text-gray-200 max-w-2xl mx-auto leading-relaxed">
+        Four friends, four cities, one mission: Making reading affordable for everyone in Kolkata, Raipur, Delhi, and Mumbai.
+      </p>
+      
+      <div class="mt-10 flex flex-col sm:flex-row gap-4 justify-center">
+        <a href="#kolkata" class="bg-teal-500 text-white px-8 py-4 rounded-full font-bold hover:bg-teal-400 transition shadow-lg transform hover:-translate-y-1">
+          Browse Books
+        </a>
+        <a href="#about" class="bg-transparent border-2 border-white text-white px-8 py-4 rounded-full font-bold hover:bg-white hover:text-teal-600 transition shadow-lg">
+          How it Works
+        </a>
+      </div>
+    </div>
+  </section>
+
+  <!-- About & Terms Section -->
+  <section id="about" class="py-20 bg-white">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="text-center mb-16 fade-in">
+        <h2 class="text-3xl md:text-4xl font-bold text-gray-900 mb-4">Who We Are</h2>
+        <div class="w-24 h-1 bg-teal-500 mx-auto rounded"></div>
+      </div>
+
+      <div class="grid md:grid-cols-2 gap-12 items-start fade-in">
+        <!-- About Content -->
+        <div class="space-y-6">
+          <div class="bg-teal-50 p-8 rounded-2xl border border-teal-100">
+            <h3 class="text-2xl font-bold text-teal-700 mb-4"><i class="fas fa-users mr-2"></i>Our Story</h3>
+            <p class="text-gray-700 leading-relaxed mb-4">
+              Welcome to <strong>BookOnRent</strong>! We are a group of four friends living in different corners of India—Kolkata, Raipur, Delhi, and Mumbai. We realized that buying every book you want to read isn't always practical, whether due to budget constraints or lack of shelf space.
+            </p>
+            <p class="text-gray-700 leading-relaxed">
+              Our platform connects book lovers with our personal collections. Whether you're a student, a professional, or a casual reader, we are here to support your reading habit without breaking the bank. ☺️
+            </p>
+          </div>
+        </div>
+
+        <!-- Terms & Conditions -->
+        <div class="bg-gray-50 p-8 rounded-2xl border border-gray-200 shadow-sm">
+          <h3 class="text-2xl font-bold text-gray-800 mb-6 flex items-center">
+            <i class="fas fa-file-contract text-teal-500 mr-3"></i>Terms & Conditions
+          </h3>
+          <ul class="space-y-4">
+            <li class="flex items-start">
+              <i class="fas fa-check-circle text-teal-500 mt-1 mr-3"></i>
+              <div>
+                <span class="font-bold text-gray-800">Rental Duration:</span>
+                <span class="text-gray-600 block">Minimum rental period is 1 week.</span>
+              </div>
+            </li>
+            <li class="flex items-start">
+              <i class="fas fa-check-circle text-teal-500 mt-1 mr-3"></i>
+              <div>
+                <span class="font-bold text-gray-800">Book Care:</span>
+                <span class="text-gray-600 block">Please treat books with love. No writing, highlighting, or dog-earing pages.</span>
+              </div>
+            </li>
+            <li class="flex items-start">
+              <i class="fas fa-check-circle text-teal-500 mt-1 mr-3"></i>
+              <div>
+                <span class="font-bold text-gray-800">Returns:</span>
+                <span class="text-gray-600 block">Books must be returned in the same condition as issued.</span>
+              </div>
+            </li>
+            <li class="flex items-start">
+              <i class="fas fa-check-circle text-teal-500 mt-1 mr-3"></i>
+              <div>
+                <span class="font-bold text-gray-800">Pricing:</span>
+                <span class="text-gray-600 block">Prices are dynamic based on book demand and edition.</span>
+              </div>
+            </li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ================= KOLKATA SECTION ================= -->
+  <section id="kolkata" class="py-16 pattern-bg border-t">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="flex items-center justify-between mb-12 fade-in">
+        <div>
+          <span class="text-teal-600 font-bold tracking-wider uppercase text-sm">Location</span>
+          <h2 class="text-3xl font-bold text-gray-900">Kolkata Library</h2>
+        </div>
+        <div class="bg-teal-100 p-3 rounded-full">
+          <i class="fas fa-map-marker-alt text-teal-600 text-2xl"></i>
+        </div>
+      </div>
+
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
+        <!-- Book 1 -->
+        <div class="bg-white rounded-xl shadow-md overflow-hidden card fade-in border border-gray-100">
+          <img src="https://images.unsplash.com/photo-1544947950-fa07a98d237f?auto=format&fit=crop&q=80&w=400" alt="The Diary of a Young Girl" class="book-cover">
+          <div class="p-5">
+            <span class="text-xs font-semibold text-teal-600 uppercase bg-teal-50 px-2 py-1 rounded">Biography</span>
+            <h3 class="text-lg font-bold text-gray-800 mt-2 mb-1">The Diary of a Young Girl</h3>
+            <p class="text-sm text-gray-500 mb-4">By Anne Frank</p>
+            <div class="flex justify-between items-center border-t pt-4">
+              <span class="text-lg font-bold text-teal-600">₹5<span class="text-sm text-gray-400 font-normal">/day</span></span>
+              <a href="#contact" class="bg-gray-800 text-white text-sm px-3 py-1.5 rounded hover:bg-gray-700 transition">Rent</a>
+            </div>
+          </div>
+        </div>
+
+        <!-- Book 2 (Placeholder) -->
+        <div class="bg-white rounded-xl shadow-md overflow-hidden card fade-in border border-gray-100">
+          <img src="https://images.unsplash.com/photo-1512820790803-83ca734da794?auto=format&fit=crop&q=80&w=400" alt="Book Title" class="book-cover">
+          <div class="p-5">
+            <span class="text-xs font-semibold text-teal-600 uppercase bg-teal-50 px-2 py-1 rounded">Fiction</span>
+            <h3 class="text-lg font-bold text-gray-800 mt-2 mb-1">The Alchemist</h3>
+            <p class="text-sm text-gray-500 mb-4">By Paulo Coelho</p>
+            <div class="flex justify-between items-center border-t pt-4">
+              <span class="text-lg font-bold text-teal-600">₹5<span class="text-sm text-gray-400 font-normal">/day</span></span>
+              <a href="#contact" class="bg-gray-800 text-white text-sm px-3 py-1.5 rounded hover:bg-gray-700 transition">Rent</a>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ================= RAIPUR SECTION ================= -->
+  <section id="raipur" class="py-16 bg-white border-t">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="flex items-center justify-between mb-12 fade-in">
+        <div>
+          <span class="text-teal-600 font-bold tracking-wider uppercase text-sm">Location</span>
+          <h2 class="text-3xl font-bold text-gray-900">Raipur Library</h2>
+        </div>
+        <div class="bg-teal-100 p-3 rounded-full">
+          <i class="fas fa-map-marker-alt text-teal-600 text-2xl"></i>
+        </div>
+      </div>
+
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
+        <!-- Book 1 -->
+        <div class="bg-white rounded-xl shadow-md overflow-hidden card fade-in border border-gray-100">
+          <img src="https://images.unsplash.com/photo-1589829085413-56de8ae18c73?auto=format&fit=crop&q=80&w=400" alt="Book" class="book-cover">
+          <div class="p-5">
+            <span class="text-xs font-semibold text-teal-600 uppercase bg-teal-50 px-2 py-1 rounded">Self Help</span>
+            <h3 class="text-lg font-bold text-gray-800 mt-2 mb-1">Atomic Habits</h3>
+            <p class="text-sm text-gray-500 mb-4">By James Clear</p>
+            <div class="flex justify-between items-center border-t pt-4">
+              <span class="text-lg font-bold text-teal-600">₹7<span class="text-sm text-gray-400 font-normal">/day</span></span>
+              <a href="#contact" class="bg-gray-800 text-white text-sm px-3 py-1.5 rounded hover:bg-gray-700 transition">Rent</a>
+            </div>
+          </div>
+        </div>
+
+         <!-- Book 2 -->
+         <div class="bg-white rounded-xl shadow-md overflow-hidden card fade-in border border-gray-100">
+          <img src="https://images.unsplash.com/photo-1543002588-bfa74002ed7e?auto=format&fit=crop&q=80&w=400" alt="Book" class="book-cover">
+          <div class="p-5">
+            <span class="text-xs font-semibold text-teal-600 uppercase bg-teal-50 px-2 py-1 rounded">Fiction</span>
+            <h3 class="text-lg font-bold text-gray-800 mt-2 mb-1">Rich Dad Poor Dad</h3>
+            <p class="text-sm text-gray-500 mb-4">By Robert Kiyosaki</p>
+            <div class="flex justify-between items-center border-t pt-4">
+              <span class="text-lg font-bold text-teal-600">₹6<span class="text-sm text-gray-400 font-normal">/day</span></span>
+              <a href="#contact" class="bg-gray-800 text-white text-sm px-3 py-1.5 rounded hover:bg-gray-700 transition">Rent</a>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ================= DELHI SECTION ================= -->
+  <section id="delhi" class="py-16 pattern-bg border-t">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="flex items-center justify-between mb-12 fade-in">
+        <div>
+          <span class="text-teal-600 font-bold tracking-wider uppercase text-sm">Location</span>
+          <h2 class="text-3xl font-bold text-gray-900">Delhi Library</h2>
+        </div>
+        <div class="bg-teal-100 p-3 rounded-full">
+          <i class="fas fa-map-marker-alt text-teal-600 text-2xl"></i>
+        </div>
+      </div>
+
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
+        <!-- Book 1 -->
+        <div class="bg-white rounded-xl shadow-md overflow-hidden card fade-in border border-gray-100">
+          <img src="https://images.unsplash.com/photo-1629198688000-71f23e745b6e?auto=format&fit=crop&q=80&w=400" alt="Book" class="book-cover">
+          <div class="p-5">
+            <span class="text-xs font-semibold text-teal-600 uppercase bg-teal-50 px-2 py-1 rounded">Science</span>
+            <h3 class="text-lg font-bold text-gray-800 mt-2 mb-1">Sapiens</h3>
+            <p class="text-sm text-gray-500 mb-4">By Yuval Noah Harari</p>
+            <div class="flex justify-between items-center border-t pt-4">
+              <span class="text-lg font-bold text-teal-600">₹8<span class="text-sm text-gray-400 font-normal">/day</span></span>
+              <a href="#contact" class="bg-gray-800 text-white text-sm px-3 py-1.5 rounded hover:bg-gray-700 transition">Rent</a>
+            </div>
+          </div>
+        </div>
+
+        <!-- Book 2 -->
+        <div class="bg-white rounded-xl shadow-md overflow-hidden card fade-in border border-gray-100">
+          <img src="https://images.unsplash.com/photo-1592496431122-2349e0fbc666?auto=format&fit=crop&q=80&w=400" alt="Book" class="book-cover">
+          <div class="p-5">
+            <span class="text-xs font-semibold text-teal-600 uppercase bg-teal-50 px-2 py-1 rounded">Finance</span>
+            <h3 class="text-lg font-bold text-gray-800 mt-2 mb-1">Psychology of Money</h3>
+            <p class="text-sm text-gray-500 mb-4">By Morgan Housel</p>
+            <div class="flex justify-between items-center border-t pt-4">
+              <span class="text-lg font-bold text-teal-600">₹6<span class="text-sm text-gray-400 font-normal">/day</span></span>
+              <a href="#contact" class="bg-gray-800 text-white text-sm px-3 py-1.5 rounded hover:bg-gray-700 transition">Rent</a>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ================= MUMBAI SECTION ================= -->
+  <section id="mumbai" class="py-16 bg-white border-t">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="flex items-center justify-between mb-12 fade-in">
+        <div>
+          <span class="text-teal-600 font-bold tracking-wider uppercase text-sm">Location</span>
+          <h2 class="text-3xl font-bold text-gray-900">Mumbai Library</h2>
+        </div>
+        <div class="bg-teal-100 p-3 rounded-full">
+          <i class="fas fa-map-marker-alt text-teal-600 text-2xl"></i>
+        </div>
+      </div>
+
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
+        <!-- Book 1 -->
+        <div class="bg-white rounded-xl shadow-md overflow-hidden card fade-in border border-gray-100">
+          <img src="https://images.unsplash.com/photo-1621351183012-e2f9972dd9bf?auto=format&fit=crop&q=80&w=400" alt="Book" class="book-cover">
+          <div class="p-5">
+            <span class="text-xs font-semibold text-teal-600 uppercase bg-teal-50 px-2 py-1 rounded">Mystery</span>
+            <h3 class="text-lg font-bold text-gray-800 mt-2 mb-1">Sherlock Holmes</h3>
+            <p class="text-sm text-gray-500 mb-4">By Arthur Conan Doyle</p>
+            <div class="flex justify-between items-center border-t pt-4">
+              <span class="text-lg font-bold text-teal-600">₹5<span class="text-sm text-gray-400 font-normal">/day</span></span>
+              <a href="#contact" class="bg-gray-800 text-white text-sm px-3 py-1.5 rounded hover:bg-gray-700 transition">Rent</a>
+            </div>
+          </div>
+        </div>
+
+        <!-- Book 2 -->
+        <div class="bg-white rounded-xl shadow-md overflow-hidden card fade-in border border-gray-100">
+          <img src="https://images.unsplash.com/photo-1541963463532-d68292c34b19?auto=format&fit=crop&q=80&w=400" alt="Book" class="book-cover">
+          <div class="p-5">
+            <span class="text-xs font-semibold text-teal-600 uppercase bg-teal-50 px-2 py-1 rounded">History</span>
+            <h3 class="text-lg font-bold text-gray-800 mt-2 mb-1">India After Gandhi</h3>
+            <p class="text-sm text-gray-500 mb-4">By Ramachandra Guha</p>
+            <div class="flex justify-between items-center border-t pt-4">
+              <span class="text-lg font-bold text-teal-600">₹10<span class="text-sm text-gray-400 font-normal">/day</span></span>
+              <a href="#contact" class="bg-gray-800 text-white text-sm px-3 py-1.5 rounded hover:bg-gray-700 transition">Rent</a>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Contact Section -->
+  <section id="contact" class="py-20 bg-gray-800 text-white">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-16">
+        
+        <div class="fade-in">
+          <h2 class="text-3xl font-bold mb-6 text-teal-400">Get in Touch</h2>
+          <p class="mb-8 text-gray-300 leading-relaxed">
+            Interested in renting a book? Have a question about our collection? 
+            Reach out to us! Mention your city and the book name in your message.
+          </p>
+          
+          <div class="space-y-4">
+            <p class="flex items-center text-lg">
+              <i class="fas fa-envelope w-8 text-teal-400"></i> 
+              <a href="mailto:bookonrent@gmail.com" class="hover:text-teal-400 transition">bookonrent@gmail.com</a>
+            </p>
+            <p class="flex items-center text-lg">
+              <i class="fas fa-phone w-8 text-teal-400"></i> 
+              <a href="tel:+9101234567890" class="hover:text-teal-400 transition">+91 01234567890</a>
+            </p>
+          </div>
+
+          <div class="mt-8 flex space-x-4">
+            <a href="#" class="w-10 h-10 rounded-full bg-gray-700 flex items-center justify-center hover:bg-teal-500 transition"><i class="fab fa-linkedin-in"></i></a>
+            <a href="#" class="w-10 h-10 rounded-full bg-gray-700 flex items-center justify-center hover:bg-teal-500 transition"><i class="fab fa-instagram"></i></a>
+            <a href="#" class="w-10 h-10 rounded-full bg-gray-700 flex items-center justify-center hover:bg-teal-500 transition"><i class="fab fa-whatsapp"></i></a>
+          </div>
+        </div>
+
+        <div class="fade-in bg-white text-gray-800 p-8 rounded-xl shadow-lg">
+          <h3 class="text-2xl font-bold mb-6 text-teal-600">Send a Message</h3>
+          <form id="contact-form" action="https://formspree.io/f/YOUR_FORMSPREE_ID" method="POST" class="space-y-4">
+            <div>
+              <label for="name" class="block text-sm font-medium text-gray-600 mb-1">Name</label>
+              <input type="text" id="name" name="name" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:outline-none" placeholder="Your Name" required>
+            </div>
+            <div>
+              <label for="email" class="block text-sm font-medium text-gray-600 mb-1">Email</label>
+              <input type="email" id="email" name="email" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:outline-none" placeholder="Your Email" required>
+            </div>
+            <div>
+              <label for="message" class="block text-sm font-medium text-gray-600 mb-1">Message</label>
+              <textarea id="message" name="message" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:outline-none" rows="4" placeholder="I want to rent 'The Alchemist' in Delhi..." required></textarea>
+            </div>
+            <button type="submit" class="w-full bg-teal-600 text-white px-6 py-3 rounded-lg font-bold hover:bg-teal-700 transition transform hover:scale-[1.02]">Send Message</button>
+          </form>
+          <p id="form-message" class="hidden mt-4 p-3 bg-green-100 text-green-700 rounded-lg text-center font-medium">Thank you! Your message has been sent.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Footer -->
+  <footer class="bg-gray-900 py-8 border-t border-gray-800">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+      <p class="text-gray-400">© 2025 BookOnRent. All rights reserved.</p>
+      <p class="text-gray-600 text-sm mt-2">Designed with <i class="fas fa-heart text-red-500"></i> by Friends</p>
+    </div>
+  </footer>
+
+  <!-- Back to Top Button -->
+  <button id="back-to-top" title="Back to Top">
+    <i class="fas fa-arrow-up"></i>
+  </button>
+
+  <!-- JavaScript -->
+  <script>
+    // Smooth scrolling for navigation links
+    document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+      anchor.addEventListener('click', function(e) {
+        e.preventDefault();
+        const targetId = this.getAttribute('href');
+        if (targetId === '#') return;
+        const targetElement = document.querySelector(targetId);
+        if (targetElement) {
+          targetElement.scrollIntoView({
+            behavior: 'smooth',
+            block: 'start'
+          });
+          // Close mobile menu if open
+          document.getElementById('mobile-menu').classList.add('hidden');
+        }
+      });
+    });
+
+    // Mobile Menu Toggle
+    const mobileBtn = document.getElementById('mobile-menu-btn');
+    const mobileMenu = document.getElementById('mobile-menu');
+    mobileBtn.addEventListener('click', () => {
+      mobileMenu.classList.toggle('hidden');
+    });
+
+    // Fade-in animation on scroll
+    const fadeIns = document.querySelectorAll('.fade-in');
+    const observer = new IntersectionObserver((entries) => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting) {
+          entry.target.classList.add('visible');
+        }
+      });
+    }, { threshold: 0.1 });
+
+    fadeIns.forEach(element => observer.observe(element));
+
+    // Form submission handling with Formspree
+    const form = document.getElementById('contact-form');
+    const formMessage = document.getElementById('form-message');
+
+    if(form){
+      form.addEventListener('submit', async function(e) {
+        e.preventDefault();
+        const formData = new FormData(form);
+        try {
+          const response = await fetch(form.action, {
+            method: 'POST',
+            body: formData,
+            headers: { 'Accept': 'application/json' }
+          });
+
+          if (response.ok) {
+            form.reset();
+            formMessage.classList.remove('hidden');
+            setTimeout(() => {
+              formMessage.classList.add('hidden');
+            }, 5000);
+          } else {
+            alert('There was an error sending your message. Please try again later.');
+          }
+        } catch (error) {
+          alert('There was an error sending your message. Please try again later.');
+        }
+      });
+    }
+
+    // Back to top button functionality
+    const backToTopButton = document.getElementById('back-to-top');
+    window.addEventListener('scroll', () => {
+      if (window.scrollY > 300) {
+        backToTopButton.style.display = 'flex';
+      } else {
+        backToTopButton.style.display = 'none';
+      }
+    });
+    backToTopButton.addEventListener('click', () => {
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    });
+  </script>
+</body>
+</html>
